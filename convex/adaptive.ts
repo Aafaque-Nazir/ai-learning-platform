@@ -64,3 +64,37 @@ export const submitProgress = mutation({
     });
   }
 });
+
+// 3. Get User Stats (Real Data)
+export const getUserStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return { completed: 0, avgScore: 0, totalAttempts: 0 };
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) return { completed: 0, avgScore: 0, totalAttempts: 0 };
+
+    const progress = await ctx.db
+      .query("progress")
+      .withIndex("by_user_lesson")
+      .filter(q => q.eq(q.field("userId"), user._id))
+      .collect();
+
+    if (progress.length === 0) return { completed: 0, avgScore: 0, totalAttempts: 0 };
+
+    const completed = progress.filter(p => p.completed).length;
+    const totalScore = progress.reduce((acc, p) => acc + p.score, 0);
+    const avgScore = Math.round(totalScore / progress.length);
+
+    return {
+      completed,
+      avgScore,
+      totalAttempts: progress.length,
+    };
+  },
+});
