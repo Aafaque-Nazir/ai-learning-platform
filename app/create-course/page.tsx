@@ -82,7 +82,7 @@ export default function CreateCoursePage() {
             </div>
 
             {/* Input Section */}
-            {!generatedModules && (
+            {!generatedModules && !isLoading && (
                 <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -103,29 +103,26 @@ export default function CreateCoursePage() {
                         
                         <button
                             onClick={handleGenerate}
-                            disabled={isLoading || !topic}
+                            disabled={!topic}
                             className={`
                                 group relative w-full flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all
-                                ${isLoading || !topic 
+                                ${!topic 
                                     ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
                                     : "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-500/20 active:scale-[0.98]"}
                             `}
                         >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-6 h-6 animate-spin" />
-                                    <span>Generating Curriculum...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles className="w-6 h-6 group-hover:animate-pulse" />
-                                    <span>Generate Course</span>
-                                </>
-                            )}
+                            <Sparkles className="w-6 h-6 group-hover:animate-pulse" />
+                            <span>Generate Course</span>
                         </button>
                     </div>
                 </motion.div>
             )}
+
+            {/* Loading / Generation State */}
+            {isLoading && (
+               <GenerationLoader topic={topic} />
+            )}
+
 
             {/* Outline Preview Section */}
             <AnimatePresence>
