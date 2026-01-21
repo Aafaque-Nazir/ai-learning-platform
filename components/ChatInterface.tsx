@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useAction, useQuery } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,13 +21,21 @@ export function ChatInterface() {
     }
   }, [messages]);
 
+  /* import useUser */
+  const { user } = useUser(); // make sure to import useUser from @clerk/nextjs if not present, but wait, ChatInterface is "use client".
+  
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || !user) return;
     setLoading(true);
     const text = input;
     setInput("");
     try {
-      await sendMessage({ body: text });
+      await sendMessage({ 
+          body: text, 
+          clerkId: user.id,
+          name: user.fullName || user.firstName || "Student",
+          email: user.primaryEmailAddress?.emailAddress
+      });
     } catch (error) {
       console.error("Failed to send", error);
     } finally {

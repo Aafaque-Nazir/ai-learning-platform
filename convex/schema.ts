@@ -24,11 +24,13 @@ export default defineSchema({
   }).index("by_course", ["courseId"]),
 
   lessons: defineTable({
-    moduleId: v.id("modules"),
-    courseId: v.id("courses"), // Redundant but helpful for querying all lessons in a course
+    moduleId: v.optional(v.id("modules")), // Optional for legacy lessons
+    courseId: v.optional(v.id("courses")), // Optional for legacy lessons
     title: v.string(),
     content: v.string(), // Markdown content
-    order: v.number(),
+    order: v.optional(v.number()), // Optional for legacy lessons
+    topic: v.optional(v.string()), // Legacy field
+    difficulty: v.optional(v.number()), // Legacy field
     questions: v.optional(v.array(v.object({
       question: v.string(),
       options: v.array(v.string()),

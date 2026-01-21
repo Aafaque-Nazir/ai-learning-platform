@@ -4,19 +4,32 @@ import { api } from "./_generated/api";
 
 // 1. Send Message Action (Calls OpenAI)
 export const sendMessage = action({
-  args: { body: v.string() },
+  args: { 
+      body: v.string(), 
+      clerkId: v.optional(v.string()), 
+      name: v.optional(v.string()), 
+      email: v.optional(v.string()) 
+  },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
-
-    // Retrieve user via Query (we can't query directly in action easily without runQuery, 
-    // but for identity check we trust ctx.auth)
     
+    // Fallback to args.clerkId if identity is missing (Action Context issue)
+    const userId = identity?.subject || args.clerkId;
+    const userName = identity?.name || args.name;
+    const userEmail = identity?.email || args.email;
+
+    if (!userId) {
+      console.error("No user identity found for sendMessage");
+      throw new Error("Unauthorized: Please login");
+    }
+
     // Save User Message
     await ctx.runMutation(api.tutor.saveMessage, {
       body: args.body,
       role: "user",
-      clerkId: identity.subject
+      clerkId: userId,
+      name: userName,
+      email: userEmail
     });
 
     // Call OpenAI (Placeholder logic until API Key is set)
@@ -55,7 +68,8 @@ export const sendMessage = action({
     await ctx.runMutation(api.tutor.saveMessage, {
       body: reply,
       role: "assistant",
-      clerkId: identity.subject
+      clerkId: userId,
+      // No need to pass name/email for assistant message, user should exist by now
     });
     
     return reply;
@@ -64,14 +78,37 @@ export const sendMessage = action({
 
 // 2. Save Message Mutation (Internal)
 export const saveMessage = mutation({
-  args: { body: v.string(), role: v.union(v.literal("user"), v.literal("assistant")), clerkId: v.string() },
+  args: { 
+    body: v.string(), 
+    role: v.union(v.literal("user"), v.literal("assistant")), 
+    clerkId: v.string(),
+    name: v.optional(v.string()), // Added optional name
+    email: v.optional(v.string()) // Added optional email
+  },
   handler: async (ctx, args) => {
-    const user = await ctx.db
+    let user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
       .unique();
       
-    if (!user) throw new Error("User not found");
+    if (!user) {
+      if (args.name) {
+          console.log("User missing, creating from message context");
+          const userId = await ctx.db.insert("users", {
+              name: args.name || "Student",
+              email: args.email || "",
+              clerkId: args.clerkId,
+              role: "student",
+          });
+          user = await ctx.db.get(userId);
+      }
+      
+      if (!user) {
+         // Should have been created above if name was passed.
+         // If still not there (e.g. name not passed), we have to fail or create minimal.
+         throw new Error("User not found and could not auto-create");
+      }
+    }
 
     await ctx.db.insert("messages", {
       userId: user._id,

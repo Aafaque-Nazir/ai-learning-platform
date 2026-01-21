@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/nextjs";
@@ -23,22 +23,35 @@ export default function CreateCoursePage() {
 
   const handleGenerate = async () => {
     if (!topic) return;
+    if (!user?.id) {
+        alert("Please wait for login to complete or refresh the page.");
+        return;
+    }
+    
     setIsLoading(true);
     try {
-      // 1. Create the Course Container first (so we have an ID)
+      // 1. Create the Course Container first
       const newCourseId = await createCourse({
         title: topic,
         description: `AI Generated course on ${topic}`,
-        userId: user?.id || "",
+        userId: user.id,
       });
       setCourseId(newCourseId);
 
-      // 2. Generate the Outline via AI
-      const modules = await generateOutline({ topic });
+      // 2. Generate the Outline via AI (with Timeout)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Timeout")), 45000)
+      );
+      
+      const modules = await Promise.race([
+        generateOutline({ topic }),
+        timeoutPromise
+      ]) as any;
+
       setGeneratedModules(modules);
     } catch (error) {
       console.error("Failed to generate:", error);
-      alert("Failed to generate course. Please try again.");
+      alert("Generation timed out or failed. Please try a simpler topic.");
     } finally {
       setIsLoading(false);
     }
@@ -185,5 +198,79 @@ export default function CreateCoursePage() {
 
         </div>
     </div>
+  );
+}
+
+function GenerationLoader({ topic }: { topic: string }) {
+  const [stage, setStage] = useState(0);
+  const [timer, setTimer] = useState(0);
+
+  useEffect(() => {
+     const interval = setInterval(() => {
+         setTimer(t => t + 0.1);
+     }, 100);
+
+     const stageInterval = setInterval(() => {
+         setStage(s => (s < 3 ? s + 1 : s));
+     }, 3000); // Change stage every 3 seconds
+
+     return () => {
+         clearInterval(interval);
+         clearInterval(stageInterval);
+     };
+  }, []);
+
+  const stages = [
+      "Analyzing topic relevance...",
+      "Structuring course modules...",
+      "Designing lesson curriculum...",
+      "Finalizing learning path..."
+  ];
+
+  return (
+      <motion.div 
+         initial={{ opacity: 0, scale: 0.95 }}
+         animate={{ opacity: 1, scale: 1 }}
+         className="bg-white/5 border border-white/10 rounded-2xl p-10 max-w-2xl mx-auto shadow-2xl backdrop-blur-md"
+      >
+          <div className="flex flex-col items-center text-center space-y-8">
+              
+              {/* Spinning / timer graphic */}
+              <div className="relative w-32 h-32 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-4 border-white/5" />
+                  <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 border-r-purple-500 border-b-transparent border-l-transparent animate-spin" />
+                  <div className="text-3xl font-bold font-mono text-white">
+                      {timer.toFixed(1)}s
+                  </div>
+              </div>
+
+              <div className="space-y-2">
+                 <h2 className="text-2xl font-bold text-white">Generating AI Course</h2>
+                 <p className="text-indigo-300">Topic: "{topic}"</p>
+              </div>
+
+              {/* Steps Checklist */}
+              <div className="w-full max-w-sm space-y-3 text-left bg-black/20 p-6 rounded-xl border border-white/5">
+                 {stages.map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 transition-all duration-500">
+                         <div className={`
+                             w-6 h-6 rounded-full flex items-center justify-center border transition-all duration-500
+                             ${stage > i ? "bg-green-500 border-green-500 text-black" : 
+                               stage === i ? "border-indigo-500 text-indigo-500 animate-pulse" : "border-white/10 text-transparent"}
+                         `}>
+                             {stage > i && <CheckCircle2 className="w-4 h-4" />}
+                             {stage === i && <Loader2 className="w-4 h-4 animate-spin" />}
+                         </div>
+                         <span className={`
+                            text-sm font-medium transition-colors duration-500
+                            ${stage > i ? "text-slate-300" : stage === i ? "text-white" : "text-slate-600"}
+                         `}>
+                             {s}
+                         </span>
+                    </div>
+                 ))}
+              </div>
+          </div>
+      </motion.div>
   );
 }

@@ -24,26 +24,62 @@ export const submitProgress = mutation({
   args: {
     lessonId: v.id("lessons"),
     score: v.number(),
-    answers: v.array(v.string()), // User answers
+    answers: v.array(v.string()),
+    clerkId: v.optional(v.string()),
+    name: v.optional(v.string()),
+    email: v.optional(v.string())
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    const clerkId = identity?.subject || args.clerkId;
     
-    const user = await ctx.db
+    if (!clerkId) {
+        console.error("No clerkId found for submitProgress");
+        return;
+    }
+
+    let user = await ctx.db
       .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .unique();
       
-    if (!user) throw new Error("User not found");
+    if (!user) {
+      console.log("User not found in DB during progress submit, creating new user record...");
+      const id = await ctx.db.insert("users", {
+        name: identity?.name || args.name || "Student",
+        email: identity?.email || args.email || "",
+        image: identity?.pictureUrl,
+        clerkId: clerkId,
+        role: "student"
+      });
+      user = await ctx.db.get(id);
+    }
 
-    await ctx.db.insert("progress", {
+    if (!user) throw new Error("Failed to create or retrieve user");
+
+    // Check if progress already exists for this lesson
+    const existingProgress = await ctx.db
+      .query("progress")
+      .withIndex("by_user_lesson", (q) => q.eq("userId", user._id).eq("lessonId", args.lessonId))
+      .unique();
+
+    if (existingProgress) {
+      // Update existing progress
+      await ctx.db.patch(existingProgress._id, {
+        score: Math.max(existingProgress.score, args.score), // Keep best score
+        completed: true, // Always mark as completed if they finished the exam
+        attempts: existingProgress.attempts + 1,
+      });
+    } else {
+      // Create new progress
+      await ctx.db.insert("progress", {
         userId: user._id,
         lessonId: args.lessonId,
-        score: args.score, // Calculated on client for now, strictly should be server
-        completed: args.score >= 70,
+        score: args.score,
+        completed: true, // Mark as completed
         attempts: 1,
-    });
+      });
+    }
   }
 });
 
@@ -77,5 +113,32 @@ export const getUserStats = query({
       avgScore,
       totalAttempts: progress.length,
     };
+  },
+});
+
+// 4. Get User Progress for Course (List of lessons)
+export const getUserProgress = query({
+  args: { courseId: v.optional(v.string()) }, // Optional filter by course if needed later
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) return [];
+
+    const progress = await ctx.db
+      .query("progress")
+      .withIndex("by_user_lesson", (q) => q.eq("userId", user._id))
+      .collect();
+
+    return progress.map(p => ({
+        lessonId: p.lessonId,
+        completed: p.completed,
+        score: p.score
+    }));
   },
 });

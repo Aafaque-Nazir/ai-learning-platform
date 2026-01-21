@@ -11,11 +11,16 @@ const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 function UserSync({ children }: { children: ReactNode }) {
   const storeUser = useMutation(api.users.store);
+  const { isLoaded, isSignedIn } = useAuth();
   
   useEffect(() => {
-    // Whenever the user is authenticated, we ensure they are stored in Convex
-    storeUser();
-  }, [storeUser]);
+    if (isLoaded && isSignedIn) {
+      console.log("UserSync: Storing user in Convex...");
+      storeUser().catch((err) => {
+        console.error("Failed to store user:", err);
+      });
+    }
+  }, [isLoaded, isSignedIn, storeUser]);
 
   return <>{children}</>;
 }
@@ -24,17 +29,7 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <Authenticated>
-          <UserSync>{children}</UserSync>
-        </Authenticated>
-        <Unauthenticated>
-          {children}
-        </Unauthenticated>
-        <AuthLoading>
-          <div className="flex h-screen w-full items-center justify-center bg-gray-50 dark:bg-gray-900">
-             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-          </div>
-        </AuthLoading>
+        {children}
       </ConvexProviderWithClerk>
     </ClerkProvider>
   );
