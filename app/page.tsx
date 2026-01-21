@@ -183,7 +183,8 @@ function CoursesView() {
 }
 
 function AnalyticsView() {
-    const stats = useQuery(api.adaptive.getUserStats);
+    const { user } = useUser();
+    const stats = useQuery(api.adaptive.getUserStats, { clerkId: user?.id });
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -262,7 +263,8 @@ function HeroSection() {
   }
   
   function UserProgressSection() {
-    const stats = useQuery(api.adaptive.getUserStats);
+    const { user } = useUser();
+    const stats = useQuery(api.adaptive.getUserStats, { clerkId: user?.id });
   
     if (!stats) return <div className="space-y-4 pt-4"><div className="h-32 bg-white/5 rounded-2xl animate-pulse" /></div>;
   
@@ -350,7 +352,8 @@ function HeroSection() {
   }
   
   function CourseGrid({ limit }: { limit?: number }) {
-    const courses = useQuery(api.courses.listUserCourses);
+    const { user } = useUser();
+    const courses = useQuery(api.courses.listUserCourses, { clerkId: user?.id });
     const router = useRouter();
   
     if (courses === undefined) {

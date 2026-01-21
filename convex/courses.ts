@@ -258,16 +258,21 @@ export const saveLessonContent = mutation({
 });
 
 export const listUserCourses = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { clerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    // First try to get from auth context
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const userId = identity?.subject || args.clerkId;
+    
+    if (!userId) {
+      console.log("No userId available in listUserCourses");
+      return [];
+    }
 
-    // Directly query courses using the Clerk ID (identity.subject)
-    // This avoids dependency on the 'users' table which might not be synced yet
+    // Directly query courses using the Clerk ID
     return await ctx.db
       .query("courses")
-      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .collect();
   }

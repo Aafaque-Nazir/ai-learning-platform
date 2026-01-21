@@ -12,12 +12,13 @@ export default function CourseDashboardPage() {
   const params = useParams();
   const courseId = params.courseId as string;
   const router = useRouter();
+  const { user } = useUser();
 
   const courseData = useQuery(api.courses.getCourseStructure, { 
     courseId: courseId as any 
   });
   
-  const userProgress = useQuery(api.adaptive.getUserProgress, {});
+  const userProgress = useQuery(api.adaptive.getUserProgress, { clerkId: user?.id });
 
   if (!courseData || !userProgress) {
     return (

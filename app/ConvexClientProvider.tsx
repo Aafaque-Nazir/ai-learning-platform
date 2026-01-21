@@ -1,34 +1,39 @@
 'use client';
 
-import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { ClerkProvider, useAuth, useUser } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
-import { Authenticated, Unauthenticated, AuthLoading, ConvexReactClient } from "convex/react";
+import { ConvexReactClient, useMutation } from "convex/react";
 import { ReactNode, useEffect } from "react";
-import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-function UserSync({ children }: { children: ReactNode }) {
-  const storeUser = useMutation(api.users.store);
-  const { isLoaded, isSignedIn } = useAuth();
+// Auto-create user on first load
+function AutoUserCreation() {
+  const { user, isLoaded } = useUser();
+  const createUser = useMutation(api.userFix.createUserManually);
   
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      console.log("UserSync: Storing user in Convex...");
-      storeUser().catch((err) => {
-        console.error("Failed to store user:", err);
+    if (isLoaded && user?.id) {
+      createUser({
+        clerkId: user.id,
+        name: user.fullName || user.firstName || "Student",
+        email: user.primaryEmailAddress?.emailAddress || "",
+      }).catch((err) => {
+        // Silently fail if user already exists
+        console.log("User creation:", err.message);
       });
     }
-  }, [isLoaded, isSignedIn, storeUser]);
+  }, [isLoaded, user?.id, createUser]);
 
-  return <>{children}</>;
+  return null;
 }
 
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        <AutoUserCreation />
         {children}
       </ConvexProviderWithClerk>
     </ClerkProvider>

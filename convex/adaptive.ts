@@ -85,14 +85,16 @@ export const submitProgress = mutation({
 
 // 3. Get User Stats (Real Data)
 export const getUserStats = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { clerkId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return { completed: 0, avgScore: 0, totalAttempts: 0 };
+    const clerkId = identity?.subject || args.clerkId;
+    
+    if (!clerkId) return { completed: 0, avgScore: 0, totalAttempts: 0 };
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .unique();
 
     if (!user) return { completed: 0, avgScore: 0, totalAttempts: 0 };
@@ -118,14 +120,16 @@ export const getUserStats = query({
 
 // 4. Get User Progress for Course (List of lessons)
 export const getUserProgress = query({
-  args: { courseId: v.optional(v.string()) }, // Optional filter by course if needed later
+  args: { clerkId: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
+    const clerkId = identity?.subject || args.clerkId;
+    
+    if (!clerkId) return [];
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .unique();
 
     if (!user) return [];
