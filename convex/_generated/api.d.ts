@@ -9,6 +9,7 @@
  */
 
 import type * as adaptive from "../adaptive.js";
+import type * as courses from "../courses.js";
 import type * as exam from "../exam.js";
 import type * as lessons from "../lessons.js";
 import type * as seed from "../seed.js";
@@ -23,6 +24,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   adaptive: typeof adaptive;
+  courses: typeof courses;
   exam: typeof exam;
   lessons: typeof lessons;
   seed: typeof seed;

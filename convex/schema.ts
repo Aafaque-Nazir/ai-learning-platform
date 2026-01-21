@@ -10,18 +10,33 @@ export default defineSchema({
     role: v.union(v.literal("student"), v.literal("teacher"), v.literal("admin")),
   }).index("by_clerk_id", ["clerkId"]),
 
-  lessons: defineTable({
+  courses: defineTable({
     title: v.string(),
-    topic: v.string(),
-    difficulty: v.number(), // 1 to 5
+    description: v.string(),
+    userId: v.string(), // Clerk ID
+  }).index("by_user", ["userId"]),
+
+  modules: defineTable({
+    courseId: v.id("courses"),
+    title: v.string(),
+    description: v.optional(v.string()), // A brief summary of what this module covers
+    order: v.number(),
+  }).index("by_course", ["courseId"]),
+
+  lessons: defineTable({
+    moduleId: v.id("modules"),
+    courseId: v.id("courses"), // Redundant but helpful for querying all lessons in a course
+    title: v.string(),
     content: v.string(), // Markdown content
-    questions: v.array(v.object({
+    order: v.number(),
+    questions: v.optional(v.array(v.object({
       question: v.string(),
       options: v.array(v.string()),
       correctAnswer: v.string(),
       explanation: v.optional(v.string())
-    })),
-  }).index("by_topic_difficulty", ["topic", "difficulty"]),
+    }))),
+  }).index("by_module", ["moduleId"])
+    .index("by_course", ["courseId"]),
 
   progress: defineTable({
     userId: v.id("users"),

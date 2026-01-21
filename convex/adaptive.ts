@@ -2,38 +2,20 @@ import { action, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 // 1. Get Next Lesson (Adaptive Logic)
+// 1. Get Next Lesson (Simple Course Flow)
 export const getNextLesson = query({
-  args: { topic: v.string() },
+  args: { courseId: v.optional(v.id("courses")) },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Unauthorized");
+    // If no course selected, we can't recommend.
+    if (!args.courseId) return null;
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user) throw new Error("User not found");
-
-    // Get user's last progress in this topic
-    const lastProgress = await ctx.db
-      .query("progress")
-      .withIndex("by_user_lesson") // We need a way to filter by topic, simplified for now
-      .filter(q => q.eq(q.field("userId"), user._id))
-      .collect();
-
-    // Simple Adaptive Logic:
-    // If no progress, start at difficulty 1.
-    // If last lesson score > 80%, increase difficulty.
-    // If last lesson score < 50%, decrease/maintain difficulty.
-    
-    // For MVP, just return a difficulty 1 lesson or the next one.
-    // This requires more complex querying which we can refine.
-    
-    return await ctx.db
+    // For now, just get the first lesson of the course
+    const firstLesson = await ctx.db
       .query("lessons")
-      .withIndex("by_topic_difficulty", (q) => q.eq("topic", args.topic).eq("difficulty", 1))
+      .withIndex("by_course", (q) => q.eq("courseId", args.courseId!))
       .first();
+
+    return firstLesson;
   },
 });
 
@@ -81,8 +63,7 @@ export const getUserStats = query({
 
     const progress = await ctx.db
       .query("progress")
-      .withIndex("by_user_lesson")
-      .filter(q => q.eq(q.field("userId"), user._id))
+      .withIndex("by_user_lesson", (q) => q.eq("userId", user._id))
       .collect();
 
     if (progress.length === 0) return { completed: 0, avgScore: 0, totalAttempts: 0 };

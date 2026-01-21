@@ -1,253 +1,294 @@
-'use client';
+"use client";
 
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useAction } from "convex/react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { useExamSecurity } from "@/hooks/useExamSecurity";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Id } from "@/convex/_generated/dataModel";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertCircle, CheckCircle2, ChevronRight, GraduationCap, ShieldAlert, Timer } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, GraduationCap, ShieldAlert, Timer, BookOpen, Sparkles, Loader2, Play } from "lucide-react";
 
-export default function ExamPage() {
+export default function LessonPage() {
   const params = useParams();
   const router = useRouter();
   const lessonId = params.lessonId as Id<"lessons">;
   
   const lesson = useQuery(api.exam.getExamLesson, { lessonId });
+  const generateContent = useAction(api.courses.generateLessonContentAction);
+  
+  // Exam Mutations
   const logViolation = useMutation(api.exam.logViolation);
   const submitProgress = useMutation(api.adaptive.submitProgress);
   
-  const [started, setStarted] = useState(false);
-  const [finished, setFinished] = useState(false);
+  // State
+  const [viewMode, setViewMode] = useState<"loading" | "content" | "exam_intro" | "exam_active" | "exam_result">("loading");
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Exam State
   const [selectedAnswers, setSelectedAnswers] = useState<{[key: number]: string}>({});
   const [result, setResult] = useState<{score: number, total: number} | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { warnings } = useExamSecurity(viewMode === "exam_active", (type) => logViolation({ lessonId, type }));
 
-  const { warnings } = useExamSecurity(started && !finished, (type) => {
-     logViolation({ lessonId, type });
-  });
+  useEffect(() => {
+    if (lesson) {
+        if (lesson.content) {
+            setViewMode("content");
+        } else {
+            // No content yet? We stay in 'content' mode but UI will show 'Generate' button
+            setViewMode("content"); 
+        }
+    }
+  }, [lesson]);
 
-  if (!lesson) return (
-     <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="w-8 h-8 border-2 border-premium-violet border-t-transparent animate-spin rounded-full" />
-     </div>
-  );
+  const handleGenerateContent = async () => {
+    if (!lesson) return;
+    setIsGenerating(true);
+    try {
+        await generateContent({ 
+            lessonId, 
+            title: lesson.title, 
+            moduleTitle: "Course Context" // ideally we fetch module title too
+        });
+        // The query 'lesson' will auto-update when mutation finishes
+    } catch (e) {
+        alert("Failed to generate content");
+    } finally {
+        setIsGenerating(false);
+    }
+  };
 
   const startExam = () => {
     document.documentElement.requestFullscreen().catch(() => {});
-    setStarted(true);
+    setViewMode("exam_active");
   };
 
   const handleSelect = (qIdx: number, option: string) => {
     setSelectedAnswers(prev => ({ ...prev, [qIdx]: option }));
   };
 
-  const handleSubmit = async () => {
-    const answeredCount = Object.keys(selectedAnswers).length;
-    if (answeredCount < lesson.questions.length) {
-      if (!confirm(`You've only answered ${answeredCount}/${lesson.questions.length} questions. Submit anyway?`)) return;
-    }
-
+  const handleSubmitExam = async () => {
+    if (!lesson?.questions) return;
     setIsSubmitting(true);
+    
     let correctCount = 0;
-    lesson.questions.forEach((q, idx) => {
-      if (selectedAnswers[idx] === q.correctAnswer) {
-        correctCount++;
-      }
+    lesson.questions.forEach((q:any, idx:number) => {
+      if (selectedAnswers[idx] === q.correctAnswer) correctCount++;
     });
 
     const finalScore = Math.round((correctCount / lesson.questions.length) * 100);
-
-    if (document.fullscreenElement) {
-       await document.exitFullscreen().catch(() => {});
-    }
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     
     try {
-      const answersArray = lesson.questions.map((_, i) => selectedAnswers[i] || "");
       await submitProgress({
         lessonId,
         score: finalScore,
-        answers: answersArray
+        answers: lesson.questions.map((_:any, i:number) => selectedAnswers[i] || "")
       });
       setResult({ score: finalScore, total: lesson.questions.length });
-      setFinished(true);
+      setViewMode("exam_result");
     } catch (e: any) {
-      console.error(e);
       alert(`Submission failed: ${e.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (finished && result) {
-    return (
-      <div className="min-h-screen mesh-gradient flex items-center justify-center p-6 bg-black">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="glass-dark p-12 rounded-[2.5rem] border-white/5 max-w-lg w-full text-center relative overflow-hidden shadow-2xl"
-        >
-           <div className="relative z-10">
-              <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-8 border border-green-500/30">
-                <CheckCircle2 className="text-green-400 w-10 h-10" />
-              </div>
-              <h1 className="text-4xl font-black text-white mb-2">Results In</h1>
-              <p className="text-gray-400 mb-8">Performance analysis complete.</p>
-              
-              <div className="text-7xl font-black bg-gradient-to-r from-premium-indigo to-premium-violet bg-clip-text text-transparent mb-10">
-                {result.score}%
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mb-10">
-                <div className="bg-white/5 p-4 rounded-3xl border border-white/5">
-                  <div className="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1">Correct</div>
-                  <div className="text-xl font-bold text-white">{Math.round((result.score/100)*result.total)}/{result.total}</div>
-                </div>
-                <div className="bg-white/5 p-4 rounded-3xl border border-white/5">
-                   <div className="text-xs text-gray-500 uppercase font-bold tracking-widest mb-1">Security</div>
-                   <div className="text-xl font-bold text-green-400">{warnings === 0 ? "Perfect" : `${warnings} Issues`}</div>
-                </div>
-              </div>
+  if (!lesson) return (
+     <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+     </div>
+  );
 
-              <Button size="lg" onClick={() => router.push("/")} className="w-full h-14 bg-white text-black hover:bg-gray-200 rounded-2xl font-bold transition-all">
-                Back to Dashboard
-              </Button>
-           </div>
-           
-           <div className="absolute top-0 right-0 w-32 h-32 bg-premium-indigo/20 blur-3xl rounded-full" />
-        </motion.div>
-      </div>
+  // --- VIEW: LESSON CONTENT ---
+  if (viewMode === "content") {
+      return (
+        <div className="min-h-screen bg-[#020617] text-white p-6 md:p-12 font-sans">
+             <div className="max-w-4xl mx-auto space-y-8">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+                            {lesson.title}
+                        </h1>
+                        <p className="text-slate-400 mt-2">Lesson Content</p>
+                    </div>
+                    <Button onClick={() => setViewMode("exam_intro")} className="bg-indigo-600 hover:bg-indigo-500 rounded-xl px-6">
+                        Take Quiz <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                </div>
+
+                {/* Content Area */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-8 min-h-[400px]">
+                    {!lesson.content ? (
+                        <div className="h-full flex flex-col items-center justify-center py-20 text-center space-y-6">
+                            <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center">
+                                <Sparkles className="w-10 h-10 text-indigo-400" />
+                            </div>
+                            <div className="max-w-md space-y-2">
+                                <h3 className="text-xl font-bold">Content Not Generated</h3>
+                                <p className="text-slate-400">This lesson is empty. Use AI to generate comprehensive learning material and a quiz.</p>
+                            </div>
+                            <Button 
+                                onClick={handleGenerateContent} 
+                                disabled={isGenerating}
+                                className="bg-white text-black hover:bg-slate-200 rounded-xl px-8 py-6 text-lg font-bold"
+                            >
+                                {isGenerating ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2 w-5 h-5" />}
+                                Generate with AI
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="prose prose-invert prose-lg max-w-none">
+                            {/* Simple rendering for now, can upgrade to ReactMarkdown */}
+                            <div className="whitespace-pre-wrap leading-relaxed text-slate-300">
+                                {lesson.content}
+                            </div>
+                        </div>
+                    )}
+                </div>
+             </div>
+        </div>
+      );
+  }
+
+  // --- VIEW: EXAM INTRO ---
+  if (viewMode === "exam_intro") {
+    return (
+        <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className="bg-white/5 backdrop-blur-xl border border-white/10 p-10 rounded-[2rem] max-w-xl w-full text-center space-y-8"
+            >
+                <div className="w-20 h-20 bg-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto border border-indigo-500/30">
+                    <ShieldAlert className="w-10 h-10 text-indigo-400" />
+                </div>
+                
+                <div>
+                    <h2 className="text-3xl font-bold text-white">Ready for the Exam?</h2>
+                    <p className="text-slate-400 mt-2">You are about to start a secure, proctored session.</p>
+                </div>
+
+                <div className="text-left bg-black/20 p-6 rounded-xl space-y-3">
+                    <div className="flex items-center gap-3 text-slate-300">
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <span>{lesson.questions?.length || 0} Questions</span>
+                    </div>
+                     <div className="flex items-center gap-3 text-slate-300">
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <span>Fullscreen Proctored Mode</span>
+                    </div>
+                </div>
+
+                <div className="flex gap-4">
+                    <Button variant="outline" onClick={() => setViewMode("content")} className="flex-1 h-14 rounded-xl border-white/10 hover:bg-white/5">
+                        Go Back
+                    </Button>
+                    <Button onClick={startExam} className="flex-1 h-14 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold">
+                        Start Exam
+                    </Button>
+                </div>
+            </motion.div>
+        </div>
     );
   }
 
-  return (
-    <div className="min-h-screen mesh-gradient bg-black text-white relative flex flex-col items-center">
-       {!started ? (
-         <div className="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-2xl">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass-dark p-10 rounded-[2.5rem] border-white/5 text-center w-full"
-            >
-               <div className="w-16 h-16 bg-premium-indigo/10 rounded-2xl flex items-center justify-center mx-auto mb-8 border border-premium-indigo/20">
-                  <ShieldAlert className="text-premium-indigo w-8 h-8" />
-               </div>
-               <h1 className="text-3xl font-black mb-4">Final Assessment</h1>
-               <p className="text-gray-400 mb-10">
-                  You are about to enter a proctored environment for <strong>{lesson.title}</strong>. 
-                  All window activity will be monitored.
-               </p>
-               
-               <div className="space-y-4 mb-10 text-left">
-                  {[
-                    "Fullscreen mode will be forced upon starting.",
-                    "Tab switching or window blurring is logged.",
-                    "Right-click and Copy/Paste are disabled.",
-                    "Your session is linked to your academic ID."
-                  ].map((rule, i) => (
-                    <div key={i} className="flex gap-3 text-sm text-gray-300 items-start">
-                      <div className="w-5 h-5 bg-white/5 rounded-full flex items-center justify-center shrink-0 border border-white/10 mt-0.5">
-                        <div className="w-1.5 h-1.5 bg-premium-violet rounded-full" />
-                      </div>
-                      {rule}
-                    </div>
-                  ))}
-               </div>
-
-               <Button size="lg" onClick={startExam} className="w-full h-16 bg-gradient-to-r from-premium-indigo to-premium-violet hover:opacity-90 rounded-2xl text-lg font-bold shadow-xl shadow-indigo-500/20 group">
-                  Initiate Secure Session
-                  <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-               </Button>
-            </motion.div>
-         </div>
-       ) : (
-         <div className="w-full max-w-4xl px-6 py-12 lg:py-20 relative min-h-screen flex flex-col">
-             {/* Sticky Header */}
-             <div className="sticky top-0 z-50 mb-12 flex justify-between items-center glass-dark p-4 px-6 rounded-2xl border-white/10 backdrop-blur-2xl">
-                <div className="flex items-center gap-3">
-                   <div className="w-8 h-8 bg-premium-indigo rounded-lg flex items-center justify-center">
-                      <GraduationCap className="text-white w-5 h-5" />
-                   </div>
-                   <div>
-                     <h2 className="text-sm font-bold tracking-tight">{lesson.title}</h2>
-                     <p className="text-[10px] text-gray-500 truncate max-w-[150px]">Secure Examination Session</p>
-                   </div>
-                </div>
-
-                <div className="flex gap-6 items-center">
-                   <div className="flex items-center gap-2 text-gray-300">
-                      <AlertCircle className={`w-4 h-4 ${warnings > 0 ? 'text-red-500 animate-pulse' : 'text-green-500'}`} />
-                      <span className="text-xs font-bold font-mono">Suspicion: {warnings}</span>
-                   </div>
-                   <div className="h-6 w-px bg-white/10" />
-                   <div className="flex items-center gap-2 text-premium-violet font-bold">
-                      <Timer className="w-4 h-4" />
-                      <span className="text-sm font-mono tracking-widest leading-none">PROCTOR ACTIVE</span>
-                   </div>
-                </div>
+  // --- VIEW: EXAM ACTIVE ---
+  if (viewMode === "exam_active") {
+       return (
+         <div className="min-h-screen bg-black text-white relative">
+             {/* Proctor Header */}
+             <div className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur border-b border-white/10 p-4 flex justify-between items-center">
+                 <div className="font-bold text-lg flex items-center gap-2">
+                     <GraduationCap className="text-indigo-400" />
+                     {lesson.title}
+                 </div>
+                 <div className="flex items-center gap-4">
+                     {warnings > 0 && (
+                         <span className="text-red-500 flex items-center gap-2 font-mono font-bold text-sm animate-pulse">
+                             <AlertCircle className="w-4 h-4" /> Warning: {warnings}
+                         </span>
+                     )}
+                     <div className="bg-red-500/10 text-red-400 px-3 py-1 rounded-full text-xs font-bold border border-red-500/20 flex items-center gap-2">
+                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                         REC
+                     </div>
+                 </div>
              </div>
-             
-             <div className="flex-1 space-y-12 pb-24">
-               {lesson.questions.map((q, idx) => (
-                 <motion.div 
-                   key={idx}
-                   initial={{ opacity: 0, y: 20 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
-                   className="relative group pt-4"
-                 >
-                    <div className="absolute top-0 left-0 text-white/5 text-8xl font-black -z-10 select-none">
-                      {idx + 1}
-                    </div>
-                    <div className="glass-dark p-8 md:p-10 rounded-[2rem] border-white/5 group-hover:border-white/10 transition-colors shadow-2xl">
-                       <p className="text-xl md:text-2xl font-medium text-white mb-8 leading-snug">
-                          {q.question}
-                       </p>
-                       <div className="grid grid-cols-1 gap-4">
-                         {q.options.map((opt, optIdx) => (
-                           <button 
-                             key={optIdx} 
-                             onClick={() => handleSelect(idx, opt)}
-                             className={`group relative flex items-center justify-between p-5 rounded-2xl transition-all border text-left
-                               ${selectedAnswers[idx] === opt 
-                                ? 'bg-premium-indigo/20 border-premium-indigo text-white shadow-[0_0_20px_rgba(79,70,229,0.2)]' 
-                                : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:border-white/10 hover:text-gray-200'
-                               }`}
-                           >
-                             <span className="font-medium">{opt}</span>
-                             <div className={`w-6 h-6 rounded-full border transition-all flex items-center justify-center
-                               ${selectedAnswers[idx] === opt 
-                                ? 'bg-premium-indigo border-premium-indigo' 
-                                : 'border-white/20'
-                               }`}
-                             >
-                               {selectedAnswers[idx] === opt && <div className="w-2 h-2 bg-white rounded-full" />}
-                             </div>
-                           </button>
-                         ))}
-                       </div>
-                    </div>
-                 </motion.div>
-               ))}
+
+             <div className="max-w-3xl mx-auto p-6 lg:p-12 space-y-12 pb-32">
+                 {lesson.questions?.map((q:any, idx:number) => (
+                     <div key={idx} className="space-y-6">
+                         <h3 className="text-xl md:text-2xl font-medium leading-relaxed">
+                            <span className="text-slate-500 mr-2">{idx+1}.</span>
+                            {q.question}
+                         </h3>
+                         <div className="grid gap-3">
+                             {q.options.map((opt:string, oIdx:number) => (
+                                 <button
+                                     key={oIdx}
+                                     onClick={() => handleSelect(idx, opt)}
+                                     className={`w-full text-left p-4 rounded-xl border transition-all ${
+                                         selectedAnswers[idx] === opt 
+                                         ? "bg-indigo-600/20 border-indigo-500 text-white" 
+                                         : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10"
+                                     }`}
+                                 >
+                                     <span className="inline-block w-6 font-bold text-slate-500 mr-2">
+                                         {String.fromCharCode(65 + oIdx)}
+                                     </span>
+                                     {opt}
+                                 </button>
+                             ))}
+                         </div>
+                     </div>
+                 ))}
              </div>
-             
-             {/* Bottom Submit Bar */}
-             <div className="fixed bottom-0 left-0 right-0 p-6 z-50 pointer-events-none">
-                <div className="max-w-4xl mx-auto w-full pointer-events-auto">
-                    <Button 
-                      onClick={handleSubmit} 
-                      disabled={isSubmitting}
-                      className="w-full h-20 bg-white text-black hover:bg-gray-200 text-xl font-black rounded-3xl shadow-3xl shadow-black shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] transition-transform hover:scale-[1.01] active:scale-[0.99] group disabled:opacity-50"
-                    >
-                      {isSubmitting ? "Processing Final Submission..." : "End Session & Analyze"}
-                      <ChevronRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                </div>
+
+             <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black to-transparent">
+                 <div className="max-w-3xl mx-auto">
+                     <Button 
+                        onClick={handleSubmitExam} 
+                        disabled={isSubmitting}
+                        className="w-full h-16 bg-white text-black hover:bg-slate-200 rounded-2xl text-lg font-bold shadow-xl"
+                     >
+                         {isSubmitting ? <Loader2 className="animate-spin" /> : "Submit Exam"}
+                     </Button>
+                 </div>
              </div>
          </div>
-       )}
-    </div>
-  );
+       );
+  }
+
+  // --- VIEW: RESULT ---
+  if (viewMode === "exam_result" && result) {
+      return (
+          <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6 text-center">
+              <motion.div 
+                   initial={{ opacity: 0, scale: 0.9 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   className="bg-white/5 border border-white/10 p-12 rounded-[2.5rem] max-w-lg w-full"
+              >
+                  <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle2 className="w-12 h-12 text-green-400" />
+                  </div>
+                  <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-600 mb-2">
+                      Score: {result.score}%
+                  </h2>
+                  <p className="text-slate-400 mb-8">
+                      You answered {Math.round((result.score / 100) * result.total)} out of {result.total} questions correctly.
+                  </p>
+                  
+                  <Button onClick={() => router.push(`/course/${lesson.courseId}`)} className="w-full h-14 bg-white text-black hover:bg-slate-200 rounded-xl font-bold">
+                      Return to Course Board
+                  </Button>
+              </motion.div>
+          </div>
+      );
+  }
+
+  return null; 
 }

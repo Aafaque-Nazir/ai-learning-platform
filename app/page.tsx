@@ -6,8 +6,9 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { ChatInterface } from "@/components/ChatInterface";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, GraduationCap, LayoutDashboard, MessageSquare, Sparkles, Trophy, Target, Zap } from "lucide-react";
+import { BookOpen, GraduationCap, LayoutDashboard, MessageSquare, Sparkles, Trophy, Target, Zap, Plus, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
@@ -157,58 +158,66 @@ function DashboardHeader({ user }: { user: any }) {
 }
 
 function CourseGrid() {
-  const lessons = useQuery(api.lessons.list);
+  const courses = useQuery(api.courses.listUserCourses);
+  const router = useRouter(); // Need to import useRouter at top or pass it down
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
-      {lessons?.map((lesson, idx) => (
+      {/* Create New Course Card */}
+       <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="group relative cursor-pointer"
+          onClick={() => window.location.href = '/create-course'}
+        >
+           <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border-2 border-dashed border-indigo-500/30 hover:border-indigo-500/60 transition-all rounded-[2.5rem] p-10 flex flex-col items-center justify-center h-full min-h-[300px] text-center gap-6 group-hover:bg-white/5">
+              <div className="w-20 h-20 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
+                  <Plus className="w-10 h-10 text-white" />
+              </div>
+              <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">Create New Course</h3>
+                  <p className="text-gray-400">Generate a comprehensive curriculum on any topic with AI.</p>
+              </div>
+           </div>
+       </motion.div>
+
+      {courses?.map((course, idx) => (
         <motion.div
-          key={lesson._id}
+          key={course._id}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: idx * 0.1 }}
           whileHover={{ y: -8 }}
           className="group relative"
         >
-          <div className="bg-white/5 border border-white/5 group-hover:border-indigo-500/50 transition-all duration-300 rounded-[2.5rem] p-10 flex flex-col h-full overflow-hidden shadow-2xl backdrop-blur-sm">
-             <div className="absolute top-0 right-0 p-8 text-white/5 text-8xl font-black transform translate-x-8 -translate-y-8 group-hover:text-indigo-500/10 transition-colors">
-                {idx + 1}
-             </div>
-             
-             <div className="flex items-center justify-between mb-8 z-10">
-                <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 flex items-center justify-center">
-                   <BookOpen className="w-7 h-7 text-indigo-400" />
-                </div>
-                <div className="px-4 py-1.5 bg-white/5 rounded-full text-[10px] font-black text-gray-400 uppercase tracking-widest border border-white/10">
-                   Level {lesson.difficulty}
-                </div>
-             </div>
+           <Link href={`/course/${course._id}`}>
+              <div className="bg-white/5 border border-white/5 group-hover:border-indigo-500/50 transition-all duration-300 rounded-[2.5rem] p-10 flex flex-col h-full overflow-hidden shadow-2xl backdrop-blur-sm min-h-[300px]">
+                
+                 <div className="flex items-center justify-between mb-8 z-10">
+                    <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 flex items-center justify-center">
+                       <BookOpen className="w-7 h-7 text-indigo-400" />
+                    </div>
+                    {/* Placeholder for progress calc */}
+                    <div className="px-4 py-1.5 bg-white/5 rounded-full text-[10px] font-black text-gray-400 uppercase tracking-widest border border-white/10">
+                       AI Generated
+                    </div>
+                 </div>
 
-             <div className="z-10 flex-1">
-                <h3 className="text-2xl font-bold mb-3">{lesson.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed mb-10 max-w-[80%]">
-                   Experience adaptive learning in {lesson.topic}. Our AI ensures you master every concept before moving forward.
-                </p>
-             </div>
+                 <div className="z-10 flex-1">
+                    <h3 className="text-2xl font-bold mb-3 line-clamp-2">{course.title}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed mb-10 line-clamp-3">
+                       {course.description}
+                    </p>
+                 </div>
 
-             <Link href={`/exam/${lesson._id}`} className="z-10 mt-auto">
-                <Button className="w-full h-16 bg-white text-black hover:bg-indigo-500 hover:text-white rounded-2xl text-lg font-black transition-all group">
-                   LAUNCH EXAM
-                   <GraduationCap className="ml-2 w-6 h-6 transform group-hover:rotate-12 transition-transform" />
-                </Button>
-             </Link>
-          </div>
+                 <Button className="w-full h-14 bg-white text-black hover:bg-indigo-500 hover:text-white rounded-2xl text-lg font-black transition-all group/btn">
+                    CONTINUE LEARNING
+                    <ChevronRight className="ml-2 w-5 h-5 transform group-hover/btn:translate-x-1 transition-transform" />
+                 </Button>
+              </div>
+           </Link>
         </motion.div>
       ))}
-
-      {(!lessons || lessons.length === 0) && (
-        <div className="col-span-full py-20 text-center">
-           <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-center mx-auto mb-6">
-              <Zap className="w-8 h-8 text-gray-700" />
-           </div>
-           <h3 className="text-xl font-bold text-gray-600">No lessons synced yet.</h3>
-        </div>
-      )}
     </div>
   );
 }

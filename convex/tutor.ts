@@ -96,10 +96,12 @@ export const getHistory = query({
 
     if (!user) return [];
 
-    return await ctx.db
+    const messages = await ctx.db
       .query("messages")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .take(50);
+      .collect();
+      
+    // Sort in memory (newest first)
+    return messages.sort((a, b) => b._creationTime - a._creationTime).slice(0, 50);
   }
 });
