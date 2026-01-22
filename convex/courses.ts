@@ -179,7 +179,7 @@ export const generateLessonContentAction = action({
     }
 
     const prompt = `
-    You are an expert Senior Staff Software Engineer and Technical Author.
+    You are an expert Senior professional Staff Software Engineer and Technical Author.
     Topic: "${args.title}"
     Module: "${args.moduleTitle || "General"}"
     
