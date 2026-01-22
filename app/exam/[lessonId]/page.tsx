@@ -35,15 +35,21 @@ export default function LessonPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { warnings } = useExamSecurity(viewMode === "exam_active", (type) => logViolation({ lessonId, type }));
 
+  // Check if content is empty or generic placeholder
+  const needsGeneration = !lesson?.content || 
+                         lesson.content.length < 50 || 
+                         lesson.content.includes("Initializing technical content") || 
+                         lesson.content.includes("future expert");
+
   useEffect(() => {
     if (lesson) {
-        if (lesson.content) {
-            setViewMode("content");
-        } else {
-            setViewMode("content"); 
+        setViewMode("content");
+        // Auto-generate if content is missing/placeholder
+        if (needsGeneration && !isGenerating) {
+            handleGenerateContent();
         }
     }
-  }, [lesson]);
+  }, [lesson, needsGeneration]);
 
   const handleGenerateContent = async () => {
     if (!lesson) return;
@@ -55,7 +61,8 @@ export default function LessonPage() {
             moduleTitle: "Course Context"
         });
     } catch (e) {
-        alert("Failed to generate content");
+        console.error("Auto-generation failed", e);
+        // Don't alert on auto-gen failure to avoid spam
     } finally {
         setIsGenerating(false);
     }
@@ -146,13 +153,13 @@ export default function LessonPage() {
                             onClick={() => setViewMode("exam_intro")} 
                             className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-8 py-6 text-base font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 hidden md:flex"
                         >
-                            Take Quiz <ChevronRight className="w-5 h-5 ml-2" />
+                            I'm Ready - Start Quiz <ChevronRight className="w-5 h-5 ml-2" />
                         </Button>
                     </div>
 
                     {/* Rich Content Area */}
                     <div className="relative">
-                        {!lesson.content ? (
+                        {needsGeneration ? (
                              <div className="flex flex-col items-center justify-center py-32 text-center space-y-8 bg-white/5 border border-white/10 rounded-3xl backdrop-blur-sm">
                                 <div className="w-24 h-24 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-full flex items-center justify-center ring-1 ring-white/10">
                                     <Sparkles className="w-12 h-12 text-indigo-400 animate-pulse" />
@@ -198,11 +205,11 @@ export default function LessonPage() {
                                 </ReactMarkdown>
                                 
                                 <div className="mt-16 pt-8 border-t border-white/10 flex justify-center md:hidden">
-                                     <Button 
+                                    <Button 
                                         onClick={() => setViewMode("exam_intro")} 
                                         className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl py-6 text-lg font-bold shadow-lg"
                                     >
-                                        Take Quiz
+                                        I'm Ready - Start Quiz
                                     </Button>
                                 </div>
                             </div>

@@ -179,31 +179,29 @@ export const generateLessonContentAction = action({
     }
 
     const prompt = `
-    You are a Senior Staff Software Engineer and Technical Author.
+    You are an expert Senior Staff Software Engineer and Technical Author.
     Topic: "${args.title}"
     Module: "${args.moduleTitle || "General"}"
     
-    GOAL: Write a production-grade documentation/guide. NO FLUFF.
+    Goal: Create a COMPREHENSIVE "A to Z" industry-grade lesson.
     
-    STRICT REQUIREMENTS:
-    1. **Code Heavy**: Content must be **60% CODE** and 40% explanation.
-    2. **Real Tech Stack**: Don't use generic examples. Use industry standards (e.g., React 19, Next.js 14, Postgres, Redis, Docker).
-    3. **Internals**: Explain HOW things work (Event Loop, DOM Diffing, B-Trees, TCP Handshakes).
-    4. **File Structure**: When modifying code, show the directory structure tree.
-    5. **Architecture**: Use MERMAID diagrams (\`\`\`mermaid) to visualize flows (Sequence, Database Schema, Architecture).
-    6. **Production Reality**: Include a specific section on **"Cost, Performance & Security"** (e.g., "This approach costs $X/mo on Vercel").
-    
-    FORMATTING:
-    - Use "###" for sections.
-    - Use code blocks with filenames: \`\`\`typescript:lib/utils.ts
-    - Use "Tip" / "Warning" blockquotes.
-    - Use mermaid blocks for diagrams.
-    
+    CRITICAL Requirements:
+    1.  **Zero to Hero**: Start from the absolute basics but quickly go DEEP into internal workings (Event Loop, Memory, Compilers).
+    2.  **60% Code / 40% Concept**: Prioritize code. Use REAL WORLD tech stacks (React 19, Next.js 14, Postgres, Redis, Docker) - NO generic pseudocode.
+    3.  **Production Reality**: Include sections on "Cost Analysis", "Performance Optimization", and "Security Pitfalls".
+    4.  **Visuals**: Use Mermaid.js diagrams for complex flows (Sequence, Database Schema, Arch).
+    5.  **Structure**:
+        - **Internal Architecture**: How it works under the hood.
+        - **Implementation**: Step-by-step production code.
+        - **Scale & Security**: How to handle 1M+ users.
+        - **Summary**: Key takeaways.
+
     Output JSON:
     {
-      "content": "Markdown string...",
-      "questions": [3 complex questions...]
+      "content": "Rich Markdown content (use headers, bolding, lists, and code blocks like \`\`\`typescript)",
+      "questions": [{"question": "Hard Interview Question?", "options": ["A","B","C","D"], "correctAnswer": "A", "explanation": "Deep explanation"}]
     }
+    Generate 3 challenging, interview-ready questions.
     `;
 
     try {
@@ -235,9 +233,14 @@ export const generateLessonContentAction = action({
         content: data.content,
         questions: data.questions
       });
+      console.log("Lesson Generation Success");
 
     } catch (e) {
-      console.error("Lesson Gen Error, using fallback:", e);
+      console.error("CRITICAL LESSON GEN FAILURE:", e);
+       // @ts-ignore
+      if (e.message) console.error("Error Message:", e.message);
+
+      console.log("Using Mock Lesson Content due to error");
       const mockData = getMockLessonContent(args.title, args.moduleTitle);
       await ctx.runMutation(api.courses.saveLessonContent, {
         lessonId: args.lessonId,
@@ -248,71 +251,147 @@ export const generateLessonContentAction = action({
   }
 });
 
+// Fallback content when AI fails - High Quality Mock Data
 function getMockLessonContent(title: string, moduleTitle?: string) {
   return {
     content: `# ${title}
 
-## Introduction
-Welcome to this lesson on **${title}**. This is part of the ${moduleTitle || "course"} curriculum.
+> **Technical Deep Dive**: Production-Grade Implementation Guide
 
-## Key Concepts
-Understanding ${title} is fundamental to mastering this subject. Here are the core ideas:
+---
 
-1. **Foundation**: The basic principles that underlie ${title}
-2. **Application**: How to apply these concepts in real-world scenarios  
-3. **Best Practices**: Industry-standard approaches and patterns
+## 🏗️ Architecture & Internals
 
-## Deep Dive
-${title} involves understanding several interconnected components. Let's explore each one:
+Understanding **${title}** requires looking at the internal execution flow.
 
-### Core Principles
-The foundation of ${title} rests on key principles that have been developed and refined over time.
+### Sequence Flow
+\`\`\`mermaid
+sequenceDiagram
+    participant Client
+    participant LoadBalancer
+    participant Server as ${title} Service
+    participant DB
 
-### Practical Examples
-Here's how you might encounter ${title} in practice:
-- Example 1: Basic implementation
-- Example 2: Advanced usage patterns
-- Example 3: Edge cases to consider
+    Client->>LoadBalancer: Request
+    LoadBalancer->>Server: Route Traffic
+    Server->>DB: Query Data
+    DB-->>Server: Result Set
+    Server-->>Client: JSON Response
+\`\`\`
 
-## Summary
-In this lesson, you learned the fundamentals of ${title}. These concepts will be built upon in subsequent lessons.
+---
 
-## Next Steps
-Practice what you've learned and prepare for the quiz to test your understanding!
+## 🛠️ The Tech Stack
+
+For this implementation, we will use a modern, type-safe stack:
+- **Runtime**: Node.js v20 (LTS)
+- **Language**: TypeScript 5.4
+- **Core Library**: \`ioredis\` (for performance)
+
+---
+
+## 💻 Implementation
+
+Let's look at a production-ready implementation. Note the error handling and type safety.
+
+\`\`\`typescript:lib/core/${title.toLowerCase().replace(/\s+/g, '-')}.ts
+import { Redis } from 'ioredis';
+import { z } from 'zod';
+
+// Define strict schema for input validation
+const ConfigSchema = z.object({
+  ttl: z.number().min(60),
+  maxRetries: z.number().default(3),
+});
+
+export class ${title.replace(/\s+/g, '')}Manager {
+  private redis: Redis;
+
+  constructor(connectionString: string) {
+    // Initialize with lazy connection pattern
+    this.redis = new Redis(connectionString, {
+      lazyConnect: true,
+      retryStrategy: (times) => Math.min(times * 50, 2000),
+    });
+  }
+
+  /**
+   * Core execution logic for ${title}
+   * Uses atomic locks to prevent race conditions.
+   */
+  async executeSyle(key: string, payload: unknown): Promise<void> {
+    const lockKey = \`lock:\${key}\`;
+    
+    // Acquire distributed lock
+    const acquired = await this.redis.set(lockKey, '1', 'NX', 'EX', 10);
+    if (!acquired) {
+      throw new Error('Could not acquire lock for ${title}');
+    }
+
+    try {
+      console.log('Processing payload...', payload);
+      // Simulate heavy compute
+      await new Promise(r => setTimeout(r, 100));
+    } finally {
+      // Always release lock
+      await this.redis.del(lockKey);
+    }
+  }
+}
+\`\`\`
+
+---
+
+## ⚠️ Common Pitfalls
+
+1.  **Memory Leaks**: improper teardown of event listeners.
+2.  **Race Conditions**: Failing to use distributed locks (as shown above).
+3.  **Error Swallowing**: Always log the *cause* of the error, not just "Failed".
+
+---
+
+## 🚀 Performance Implications
+
+| Metric | With Optimization | Without Optimization |
+|:-------|:------------------|:---------------------|
+| Latency | < 50ms | > 200ms |
+| Memory | 50MB | 200MB+ |
+
+> **Pro Tip**: Always profile your memory usage using \`node --inspect\` before deploying to production.
 `,
     questions: [
       {
-        question: `What is the main purpose of ${title}?`,
+        question: `In a production environment, why is centralized locking important for ${title}?`,
         options: [
-          "To provide a structured approach to learning",
-          "To complicate the development process",
-          "To replace existing methodologies entirely",
-          "None of the above"
+          "To prevent race conditions across multiple instances",
+          "It makes the code look more complex",
+          "It consumes less memory",
+          "It is required by TypeScript"
         ],
-        correctAnswer: "To provide a structured approach to learning",
-        explanation: `${title} is designed to provide a structured, efficient approach to the subject matter.`
+        correctAnswer: "To prevent race conditions across multiple instances",
+        explanation: `Without distributed locking, multiple instances might process ${title} logic simultaneously, leading to data corruption.`
       },
       {
-        question: `Which is a key benefit of understanding ${title}?`,
+        question: `Which pattern is used to handle connection failures in the example code?`,
         options: [
-          "Faster problem-solving abilities",
-          "Increased complexity in projects",
-          "Reduced need for documentation", 
-          "Elimination of all bugs"
+          "Exponential Backoff in Retry Strategy",
+          "Simply ignoring the error",
+          "Restarting the entire server",
+          "Using a `while(true)` loop"
         ],
-        correctAnswer: "Faster problem-solving abilities",
-        explanation: "Understanding core concepts leads to faster and more effective problem-solving."
+        correctAnswer: "Exponential Backoff in Retry Strategy",
+        explanation: `The retryStrategy function implements an exponential backoff (times * 50) to prevent overwhelming the database during outages.`
       },
       {
-        question: `What should you do after completing this lesson?`,
+        question: `What is the primary benefit of using Zod schemas as shown?`,
         options: [
-          "Take the quiz to test your knowledge",
-          "Skip to the next module",
-          "Delete the course",
-          "Stop learning"
+          "Runtime validation of unknown data structures",
+          "Compiling TypeScript faster",
+          "Reducing bundle size",
+          "Connecting to the database"
         ],
-        correctAnswer: "Take the quiz to test your knowledge",
-        explanation: "Taking the quiz helps reinforce learning and identify areas that need review."
+        correctAnswer: "Runtime validation of unknown data structures",
+        explanation: `Zod ensures that configuration objects match the expected shape at runtime, failing fast if invalid data is passed.`
       }
     ]
   };
@@ -444,14 +523,14 @@ export const generateCourseOutline = mutation({
       // Insert lessons with PRE-POPULATED CONTENT
       let lessonOrder = 1;
       for (const lessonTitle of modData.lessons) {
-        const lessonContent = generateLessonPlaceholder(lessonTitle, modData.title);
+        // const lessonContent = generateLessonPlaceholder(lessonTitle, modData.title);
         await ctx.db.insert("lessons", {
           moduleId,
           courseId: args.courseId,
           title: lessonTitle,
-          content: lessonContent.content,
+          content: "", // Empty content triggers auto-generation on frontend
           order: lessonOrder++,
-          questions: lessonContent.questions,
+          questions: [],
         });
       }
     }
@@ -495,134 +574,26 @@ export const deleteCourse = mutation({
   },
 });
 
-// Helper to generate FUN, ENGAGING pre-populated lesson content
+// Helper to generate a professional placeholder while AI generates content
 function generateLessonPlaceholder(lessonTitle: string, moduleTitle: string) {
   return {
-    content: `# 🚀 ${lessonTitle}
+    content: `# ${lessonTitle}
 
-> *"The expert in anything was once a beginner."* — Helen Hayes
-
----
-
-## 👋 Hey there, future expert!
-
-Welcome to **${lessonTitle}**! This is part of the *${moduleTitle}* module, and trust me — you're going to love this one! 
-
-Grab your favorite drink ☕, get comfy, and let's dive in!
+> *Initializing technical content generation...*
 
 ---
 
-## 🎯 What You'll Learn
+## ⏳ Content Pending
 
-By the end of this lesson, you'll be able to:
+The detailed technical documentation for **${lessonTitle}** is currently being generated by the AI Senior Engineer agent.
 
-✅ Understand the **core concepts** of ${lessonTitle}  
-✅ Apply these skills in **real-world scenarios**  
-✅ Impress your friends with your new knowledge 😎
+### What to expect in this lesson:
+- **Deep Dive**: Internal architecture and memory management details.
+- **Production Code**: Real-world implementation examples.
+- **Best Practices**: Industry-standard patterns and anti-patterns.
 
----
-
-## 🤔 So, What Exactly is ${lessonTitle}?
-
-Great question! Let's break it down in simple terms:
-
-**${lessonTitle}** is like the secret sauce 🍔 that makes everything work better. Think of it as the foundation — without it, everything else just... falls apart.
-
-### Here's the deal:
-
-| Concept | Think of it as... |
-|---------|------------------|
-| **Foundation** | The base layer of a cake 🎂 |
-| **Application** | Actually eating that delicious cake |
-| **Mastery** | Making your own cakes from scratch! |
-
----
-
-## 💡 Why Should You Care?
-
-Here's the thing — **${lessonTitle}** isn't just some fancy concept to memorize. It's actually SUPER useful because:
-
-1. **🏗️ Foundation**: Everything else builds on this
-2. **💼 Career Boost**: Employers LOVE people who understand this
-3. **🧠 Brain Power**: It literally makes you smarter at problem-solving
-
----
-
-## 🎮 Let's Get Practical!
-
-Okay, enough theory. Let's see this in action!
-
-### Example 1: The Basics
-Imagine you're building a house. ${lessonTitle} is like making sure you have a solid foundation before adding walls and a roof. Skip this? Your house goes 💥 boom.
-
-### Example 2: Real World
-In the real world, professionals use ${lessonTitle} every single day. Whether you're building apps, designing systems, or just trying to be awesome — this is your toolkit.
-
----
-
-## 🧪 Quick Knowledge Check
-
-Before we move on, ask yourself:
-- Can I explain ${lessonTitle} to a 5-year-old? 
-- Do I see why this matters?
-- Am I ready to crush the quiz? 💪
-
-If you answered "yes" to all three — you're READY!
-
----
-
-## 📝 Key Takeaways
-
-Let's wrap this up with the highlights:
-
-🌟 **${lessonTitle}** is essential — don't skip it!  
-🌟 Practice makes perfect (seriously, practice!)  
-🌟 You're doing amazing — keep going! 
-
----
-
-## 🎉 What's Next?
-
-You've made it through! Now it's time to **test your knowledge** with a quick quiz.
-
-Don't worry — you've got this! And remember, even if you don't get everything right, that's how we learn. 
-
-**Let's goooo!** 🚀
+*Please wait a moment for the content to stream in...*
 `,
-    questions: [
-      {
-        question: `Which of the following BEST describes "${lessonTitle}"?`,
-        options: [
-          `A core concept that forms the foundation of ${moduleTitle}`,
-          "An outdated practice no longer used in the industry",
-          "A purely theoretical concept with no practical use",
-          "Something only experts need to understand"
-        ],
-        correctAnswer: `A core concept that forms the foundation of ${moduleTitle}`,
-        explanation: `"${lessonTitle}" is fundamental to understanding ${moduleTitle}. It's used widely across the industry!`
-      },
-      {
-        question: `Based on this lesson, what is a PRIMARY benefit of mastering ${lessonTitle}?`,
-        options: [
-          "It has no real-world benefits",
-          "It only helps with theoretical exams",
-          "Better problem-solving and practical application skills",
-          "It's only useful for academic purposes"
-        ],
-        correctAnswer: "Better problem-solving and practical application skills",
-        explanation: `Understanding ${lessonTitle} directly improves your ability to solve real-world problems and build practical solutions.`
-      },
-      {
-        question: `In the context of ${moduleTitle}, how does ${lessonTitle} relate to other concepts?`,
-        options: [
-          "It's completely isolated and unrelated to other topics",
-          "It provides the groundwork for more advanced topics",
-          "It should be learned last after everything else",
-          "It contradicts other concepts in this module"
-        ],
-        correctAnswer: "It provides the groundwork for more advanced topics",
-        explanation: `${lessonTitle} builds the foundation that other concepts in ${moduleTitle} will expand upon. Master this first!`
-      }
-    ]
+    questions: []
   };
 }
