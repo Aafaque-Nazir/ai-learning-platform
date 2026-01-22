@@ -70,17 +70,22 @@ export const generateCourseAction = action({
       const json = await response.json();
       
       if (json.error || !json.choices || json.choices.length === 0) {
-        console.error("OpenAI Error:", json.error || "No choices");
+        console.error("OpenAI API ERROR:", JSON.stringify(json.error, null, 2));
+        console.error("Full Response:", JSON.stringify(json, null, 2));
         return getMockCurriculum(args.topic);
       }
 
       const content = json.choices[0].message.content;
+      console.log("OpenAI Success. Content Length:", content.length);
       const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim();
       const parsed = JSON.parse(cleanContent);
       return parsed.modules;
 
     } catch (e) {
-      console.error("AI Generation Error, using fallback:", e);
+      console.error("CRITICAL AI FAILURE IN generateCourseAction:");
+      console.error(e);
+      // @ts-ignore
+      if (e.message) console.error("Error Message:", e.message);
       return getMockCurriculum(args.topic);
     }
   },
@@ -89,30 +94,63 @@ export const generateCourseAction = action({
 function getMockCurriculum(topic: string) {
   return [
     {
-      title: `Module 1: Fundamentals of ${topic}`,
-      description: `Building a strong foundation in ${topic}.`,
+      title: `Module 1: Environment Setup & Fundamentals`,
+      description: `Setting up your development environment and understanding the core building blocks of ${topic}.`,
       lessons: [
-        `What is ${topic}?`,
-        `History and Importance`,
-        `Core Principles`
+        `Introduction to ${topic}`,
+        `Setting up the Dev Environment (VS Code, Git, Node.js)`,
+        `Hello World: Your First Program`,
+        `Core Syntax and Data Types`
       ]
     },
     {
-      title: `Module 2: Deep Dive into ${topic}`,
-      description: `Exploring advanced concepts and techniques.`,
+      title: `Module 2: Deep Dive into Architecture`,
+      description: `Understanding how ${topic} works under the hood.`,
       lessons: [
-        `Advanced Techniques`,
-        `Common Patterns`,
-        `Best Practices`
+        `Internal Architecture & Memory Management`,
+        `The Event Loop & Async Patterns`,
+        `Design Patterns in ${topic}`,
+        `Data Structures Deep Dive`
       ]
     },
     {
-      title: `Module 3: Real-World Applications`,
-      description: `Applying knowledge to solve real problems.`,
+      title: `Module 3: Advanced Modern Patterns`,
+      description: `Mastering widely used industry-standard patterns.`,
       lessons: [
-        `Building a Project`,
-        `Case Studies`,
-        `Career Paths in ${topic}`
+        `State Management Strategies`,
+        `Performance Optimization Techniques`,
+        `Security Best Practices (OWASP)`,
+        `Clean Code Principles`
+      ]
+    },
+    {
+      title: `Module 4: Testing & Quality Assurance`,
+      description: `Ensuring your code is robust and production-ready.`,
+      lessons: [
+        `Unit Testing with Jest/Vitest`,
+        `Integration Testing Strategies`,
+        `E2E Testing with Playwright`,
+        `Debugging Techniques`
+      ]
+    },
+    {
+      title: `Module 5: DevOps & Production Deployment`,
+      description: `Taking your application from localhost to the cloud.`,
+      lessons: [
+        `Dockerizing your Application`,
+        `CI/CD Pipelines (GitHub Actions)`,
+        `Deploying to Cloud (Vercel/AWS)`,
+        `Monitoring & Logging`
+      ]
+    },
+    {
+      title: `Module 6: Capstone Project`,
+      description: `Building a complete real-world application from scratch.`,
+      lessons: [
+        `Project Planning & Architecture`,
+        `Building the Backend API`,
+        `Frontend Integration`,
+        `Final Polish & Launch`
       ]
     }
   ];
