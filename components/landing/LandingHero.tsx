@@ -10,8 +10,8 @@ export function LandingHero() {
     <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full -z-10">
-        <div className="absolute top-[10%] left-[10%] w-[30%] h-[30%] bg-indigo-600/20 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[10%] right-[10%] w-[30%] h-[30%] bg-violet-600/20 blur-[120px] rounded-full animate-pulse decoration-indigo-500" />
+        <div className="absolute top-[10%] left-[10%] w-[30%] h-[30%] bg-blue-600/20 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[10%] right-[10%] w-[30%] h-[30%] bg-cyan-600/20 blur-[120px] rounded-full animate-pulse decoration-indigo-500" />
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
@@ -35,7 +35,7 @@ export function LandingHero() {
             className="text-5xl lg:text-7xl xl:text-8xl font-black tracking-tight mb-8 leading-[1.1]"
           >
             Master Any Skill with{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-cyan-400">
               Personalized AI
             </span>
           </motion.h1>

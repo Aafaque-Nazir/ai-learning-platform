@@ -12,12 +12,12 @@ const steps = [
   {
     title: "Generate Curriculum",
     description: "Watch as a comprehensive, multi-module course is generated instantly, complete with lessons and quizzes.",
-    icon: <LayoutDashboard className="w-8 h-8 text-purple-400" />,
+    icon: <LayoutDashboard className="w-8 h-8 text-blue-400" />,
   },
   {
     title: "Learn & Interact",
     description: "Study with AI-powered lessons and get help from your personal tutor whenever you're stuck.",
-    icon: <GraduationCap className="w-8 h-8 text-pink-400" />,
+    icon: <GraduationCap className="w-8 h-8 text-indigo-400" />,
   },
   {
     title: "Verify Mastery",

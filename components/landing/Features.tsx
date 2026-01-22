@@ -15,19 +15,19 @@ const features = [
     title: "Instant Curriculum",
     description: "Tell AI what you want to learn, and it generates a detailed, structured course in seconds.",
     icon: <Zap className="w-6 h-6" />,
-    color: "indigo"
+    color: "blue"
   },
   {
     title: "AI Personal Tutor",
     description: "Stuck on a concept? Chat with your AI tutor 24/7 for tailored explanations and examples.",
     icon: <MessageSquare className="w-6 h-6" />,
-    color: "purple"
+    color: "indigo"
   },
   {
     title: "Smart Assessments",
     description: "Take AI-proctored exams that adapt to your knowledge level to ensure true mastery.",
     icon: <Target className="w-6 h-6" />,
-    color: "pink"
+    color: "cyan"
   },
   {
     title: "Deep Analytics",
@@ -39,13 +39,13 @@ const features = [
     title: "Verified Skill Badges",
     description: "Earn blockchain-verifiable badges for every course you complete and exam you pass.",
     icon: <ShieldCheck className="w-6 h-6" />,
-    color: "violet"
+    color: "sky"
   },
   {
     title: "Multi-Language Support",
     description: "Learn and generate content in over 50 languages with native-level accuracy.",
     icon: <Globe className="w-6 h-6" />,
-    color: "blue"
+    color: "teal"
   }
 ];
 
