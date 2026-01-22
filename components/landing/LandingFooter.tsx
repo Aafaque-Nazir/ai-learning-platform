@@ -82,7 +82,7 @@ export function LandingFooter() {
         </div>
 
         <div className="mt-20 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-sm">
-          <p>© 2024 AdaptiveAI Learning Platform. All rights reserved.</p>
+          <p>© 2026 AdaptiveAI Learning Platform. All rights reserved.</p>
           <p>Made with ❤️ for lifelong learners.</p>
         </div>
       </div>
