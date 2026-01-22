@@ -6,9 +6,10 @@ import {
   useUser,
   UserButton,
 } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 // import { ChatInterface } from "@/components/ChatInterface";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -464,7 +465,9 @@ function DashboardHeader({ user }: { user: any }) {
 function CourseGrid({ limit }: { limit?: number }) {
   const { user } = useUser();
   const courses = useQuery(api.courses.listUserCourses, { clerkId: user?.id });
+  const deleteCourse = useMutation(api.courses.deleteCourse);
   const router = useRouter();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [showTimeout, setShowTimeout] = useState(false);
 
@@ -526,57 +529,83 @@ function CourseGrid({ limit }: { limit?: number }) {
 
   const displayCourses = limit ? courses.slice(0, limit) : courses;
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-      {displayCourses.map((course, idx) => (
-        <motion.div
-          key={course._id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: idx * 0.1 }}
-          className="group relative"
-        >
-          <Link href={`/course/${course._id}`} className="block h-full">
-            <div className="h-full bg-[#111] border border-white/10 hover:border-indigo-500/50 transition-all duration-300 rounded-[2.5rem] p-8 flex flex-col shadow-2xl overflow-hidden group-hover:bg-[#151515]">
-              {/* Gradient Blob for Hover */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/20 transition-all duration-500" />
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        {displayCourses.map((course, idx) => (
+          <motion.div
+              key={course._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              className="group relative"
+          >
+              <div 
+                onClick={() => router.push(`/course/${course._id}`)}
+                className="cursor-pointer h-full bg-[#111] border border-white/10 hover:border-indigo-500/50 transition-all duration-300 rounded-[2.5rem] p-8 flex flex-col shadow-2xl overflow-hidden group-hover:bg-[#151515]"
+              >
+                  {/* Gradient Blob for Hover */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/20 transition-all duration-500" />
 
-              <div className="flex items-center justify-between mb-8 z-10">
-                <div className="w-14 h-14 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <BookOpen className="w-6 h-6 text-indigo-400 group-hover:text-indigo-300" />
-                </div>
-                {/* Tag */}
-                <div className="px-4 py-1.5 bg-white/5 rounded-full text-[10px] font-black text-indigo-300 uppercase tracking-widest border border-white/10 shadow-sm">
-                  AI Course
-                </div>
-              </div>
+                  <div className="flex items-center justify-between mb-8 z-10">
+                      <div className="w-14 h-14 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <BookOpen className="w-6 h-6 text-indigo-400 group-hover:text-indigo-300" />
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {/* Delete Button */}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors z-50"
+                            disabled={deletingId === course._id}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm("Are you sure you want to delete this course?")) {
+                                    setDeletingId(course._id);
+                                    deleteCourse({ courseId: course._id })
+                                        .catch((err) => console.error(err))
+                                        .finally(() => setDeletingId(null));
+                                }
+                            }}
+                        >
+                           {deletingId === course._id ? (
+                               <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                           ) : (
+                               <Trash2 className="w-4 h-4" />
+                           )}
+                        </Button>
 
-              <div className="z-10 flex-1">
-                <h3 className="text-xl font-bold mb-3 line-clamp-2 text-white group-hover:text-indigo-200 transition-colors">
-                  {course.title}
-                </h3>
-                <p className="text-slate-400 text-sm leading-relaxed mb-10 line-clamp-2 group-hover:text-slate-300">
-                  {course.description}
-                </p>
-              </div>
-
-              <div className="z-10 mt-auto">
-                <div className="w-full bg-white/5 h-1.5 rounded-full mb-4 overflow-hidden">
-                  <div className="h-full bg-indigo-500 w-[10%] group-hover:w-[25%] transition-all duration-700" />
-                </div>
-                <div className="flex items-center justify-between pt-6 border-t border-white/5 group-hover:border-white/10 transition-colors">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider group-hover:text-indigo-400 transition-colors">
-                    Continue Learning
-                  </span>
-                  <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center transform translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 shadow-lg">
-                    <ChevronRight className="w-5 h-5" />
+                        <div className="px-4 py-1.5 bg-white/5 rounded-full text-[10px] font-black text-indigo-300 uppercase tracking-widest border border-white/10 shadow-sm">
+                            AI Course
+                        </div>
+                      </div>
                   </div>
-                </div>
+
+                  <div className="z-10 flex-1">
+                  <h3 className="text-xl font-bold mb-3 line-clamp-2 text-white group-hover:text-indigo-200 transition-colors">
+                      {course.title}
+                  </h3>
+                  <p className="text-slate-400 text-sm leading-relaxed mb-10 line-clamp-2 group-hover:text-slate-300">
+                      {course.description}
+                  </p>
+                  </div>
+
+                  <div className="z-10 mt-auto">
+                    <div className="w-full bg-white/5 h-1.5 rounded-full mb-4 overflow-hidden">
+                      <div className="h-full bg-indigo-500 w-[10%] group-hover:w-[25%] transition-all duration-700" />
+                    </div>
+                    <div className="flex items-center justify-between pt-6 border-t border-white/5 group-hover:border-white/10 transition-colors">
+                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider group-hover:text-indigo-400 transition-colors">
+                        Continue Learning
+                      </span>
+                      <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center transform translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 shadow-lg">
+                        <ChevronRight className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
               </div>
-            </div>
-          </Link>
-        </motion.div>
-      ))}
-    </div>
-  );
+          </motion.div>
+        ))}
+      </div>
+    );
 }

@@ -13,16 +13,24 @@ export const generateCourseAction = action({
       return getMockCurriculum(args.topic);
     }
 
-    const prompt = `
-    You are an expert curriculum designer. Create a comprehensive, industry-ready course outline for the topic: "${args.topic}".
-    The course should be structured to take a learner from beginner to job-ready.
+    const isKidTopic = args.topic.toLowerCase().includes("kid") || args.topic.toLowerCase().includes("child");
     
-    Structure Requirements:
-    - Create between 3 to 5 modules.
-    - Each module must have 3-5 lessons.
-    - Module 1 should always be "Foundations & Basics".
-    - The final module should be "Real-world Projects & Career Verification".
-    - Ensure logical progression between modules.
+    // Use GPT-4o for superior curriculum structuring
+    const prompt = `
+    You are a World-Class Curriculum Designer for an elite coding bootcamp.
+    Topic: "${args.topic}"
+    Target Audience: ${isKidTopic ? "Children" : "Professional Developers / Engineering Students"}
+
+    Goal: Create a "Zero to Hero" Masterclass course.
+    
+    Requirements:
+    1. **Scope**: Cover EVERYTHING from basics to advanced production patterns.
+    2. **Modules**: 
+       - If complex (e.g., Web Dev, AI, System Design), create **8 to 12 MODULES**.
+       - If simple, create 5 MODULES.
+    3. **Content**: Include "Tech Stack Setup", "Core Concepts", "Advanced Patterns", "Testing", "Deployment", "Security", "Scalability", and "Capstone Projects".
+    4. **Tone**: High standards. Industry-grade.
+    5. **Modernity**: Always prefer modern stacks (e.g., TypeScript > JS, Next.js > CRA, Postgres > Mongo) unless tailored otherwise.
 
     Return ONLY a JSON object with this structure:
     {
@@ -30,7 +38,7 @@ export const generateCourseAction = action({
         {
           "title": "Module Title",
           "description": "Brief description",
-          "lessons": ["Lesson 1", "Lesson 2", "Lesson 3"]
+          "lessons": ["Lesson 1", "Lesson 2", "Lesson 3", "Lesson 4", "Lesson 5"]
         }
       ]
     }
@@ -38,7 +46,7 @@ export const generateCourseAction = action({
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased timeout for larger outlines
 
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -47,13 +55,12 @@ export const generateCourseAction = action({
           "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4o", // Upgraded model for structure
           messages: [
-            { role: "system", content: "Output strict JSON only." },
+            { role: "system", content: "You are a serious technical curriculum architect. Output strict JSON only." },
             { role: "user", content: prompt }
           ],
           temperature: 0.7,
-          max_tokens: 500, // Limit output size for speed
         }),
         signal: controller.signal,
       });
@@ -62,8 +69,8 @@ export const generateCourseAction = action({
 
       const json = await response.json();
       
-      if (!json.choices || json.choices.length === 0) {
-        console.error("No choices in response, using mock");
+      if (json.error || !json.choices || json.choices.length === 0) {
+        console.error("OpenAI Error:", json.error || "No choices");
         return getMockCurriculum(args.topic);
       }
 
@@ -82,14 +89,30 @@ export const generateCourseAction = action({
 function getMockCurriculum(topic: string) {
   return [
     {
-      title: `Introduction to ${topic}`,
-      description: `A comprehensive introduction to ${topic} fundamentals.`,
+      title: `Module 1: Fundamentals of ${topic}`,
+      description: `Building a strong foundation in ${topic}.`,
       lessons: [
         `What is ${topic}?`,
-        `History and Evolution of ${topic}`,
-        `Key Concepts in ${topic}`,
-        `Getting Started with ${topic}`,
-        `Best Practices in ${topic}`
+        `History and Importance`,
+        `Core Principles`
+      ]
+    },
+    {
+      title: `Module 2: Deep Dive into ${topic}`,
+      description: `Exploring advanced concepts and techniques.`,
+      lessons: [
+        `Advanced Techniques`,
+        `Common Patterns`,
+        `Best Practices`
+      ]
+    },
+    {
+      title: `Module 3: Real-World Applications`,
+      description: `Applying knowledge to solve real problems.`,
+      lessons: [
+        `Building a Project`,
+        `Case Studies`,
+        `Career Paths in ${topic}`
       ]
     }
   ];
@@ -118,29 +141,48 @@ export const generateLessonContentAction = action({
     }
 
     const prompt = `
-    Create educational content for lesson: "${args.title}" (Module: ${args.moduleTitle || "General"}).
-    Output JSON with:
+    You are a Senior Staff Software Engineer and Technical Author.
+    Topic: "${args.title}"
+    Module: "${args.moduleTitle || "General"}"
+    
+    GOAL: Write a production-grade documentation/guide. NO FLUFF.
+    
+    STRICT REQUIREMENTS:
+    1. **Code Heavy**: Content must be **60% CODE** and 40% explanation.
+    2. **Real Tech Stack**: Don't use generic examples. Use industry standards (e.g., React 19, Next.js 14, Postgres, Redis, Docker).
+    3. **Internals**: Explain HOW things work (Event Loop, DOM Diffing, B-Trees, TCP Handshakes).
+    4. **File Structure**: When modifying code, show the directory structure tree.
+    5. **Architecture**: Use MERMAID diagrams (\`\`\`mermaid) to visualize flows (Sequence, Database Schema, Architecture).
+    6. **Production Reality**: Include a specific section on **"Cost, Performance & Security"** (e.g., "This approach costs $X/mo on Vercel").
+    
+    FORMATTING:
+    - Use "###" for sections.
+    - Use code blocks with filenames: \`\`\`typescript:lib/utils.ts
+    - Use "Tip" / "Warning" blockquotes.
+    - Use mermaid blocks for diagrams.
+    
+    Output JSON:
     {
-      "content": "Markdown lesson with headings, explanations, examples",
-      "questions": [{"question": "Q?", "options": ["A","B","C","D"], "correctAnswer": "A", "explanation": "Why"}]
+      "content": "Markdown string...",
+      "questions": [3 complex questions...]
     }
-    Generate 3 questions.
     `;
 
     try {
       const controller = new AbortController();
-      setTimeout(() => controller.abort(), 25000);
+      // Increased timeout for highly detailed content
+      setTimeout(() => controller.abort(), 45000);
 
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4o", // Using 4o for superior reasoning and code quality
           messages: [
-            { role: "system", content: "Output strict JSON only." },
+            { role: "system", content: "You are a cynical senior engineer who hates generic tutorials. You write deep, technical, production-ready guides. Output strict JSON only." },
             { role: "user", content: prompt }
           ],
-          max_tokens: 1000,
+          max_tokens: 2000, 
         }),
         signal: controller.signal,
       });
@@ -375,6 +417,43 @@ export const generateCourseOutline = mutation({
         });
       }
     }
+  },
+});
+
+export const deleteCourse = mutation({
+  args: { courseId: v.id("courses") },
+  handler: async (ctx, args) => {
+    // 1. Delete all user progress related to lessons in this course
+    const modules = await ctx.db
+        .query("modules")
+        .withIndex("by_course", (q) => q.eq("courseId", args.courseId))
+        .collect();
+
+    for (const mod of modules) {
+        const lessons = await ctx.db
+            .query("lessons")
+            .withIndex("by_module", (q) => q.eq("moduleId", mod._id))
+            .collect();
+        
+        for (const lesson of lessons) {
+            // Delete progress for this lesson
+            const progress = await ctx.db
+                .query("progress")
+                .filter((q) => q.eq(q.field("lessonId"), lesson._id))
+                .collect();
+            
+            for (const p of progress) {
+                await ctx.db.delete(p._id);
+            }
+            // Delete the lesson
+            await ctx.db.delete(lesson._id);
+        }
+        // Delete the module
+        await ctx.db.delete(mod._id);
+    }
+
+    // 2. Delete the course itself
+    await ctx.db.delete(args.courseId);
   },
 });
 
