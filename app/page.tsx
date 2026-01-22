@@ -31,6 +31,10 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { LandingHero } from "@/components/landing/LandingHero";
+import { Features } from "@/components/landing/Features";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { LandingFooter } from "@/components/landing/LandingFooter";
 
 type ViewState = "dashboard" | "courses" | "analytics";
 
@@ -180,23 +184,29 @@ function NavButton({
 
 function LandingPage() {
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
-      <nav className="flex justify-between items-center mb-24 px-8 py-4 bg-white/[0.03] border border-white/10 rounded-full backdrop-blur-xl shadow-2xl">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-            <Sparkles className="text-white w-5 h-5" />
+    <div className="relative">
+      <nav className="fixed top-0 left-0 right-0 z-[100] max-w-7xl mx-auto px-6 py-6 mt-4">
+        <div className="flex justify-between items-center px-8 py-4 bg-black/40 border border-white/10 rounded-full backdrop-blur-2xl shadow-2xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+              <Sparkles className="text-white w-5 h-5" />
+            </div>
+            <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+              AdaptiveAI
+            </span>
           </div>
-          <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-            AdaptiveAI
-          </span>
+          <SignInButton mode="modal">
+            <Button className="bg-white text-black hover:bg-slate-200 font-bold transition-all px-8 py-5 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+              Get Started <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          </SignInButton>
         </div>
-        <SignInButton mode="modal">
-          <Button className="bg-white text-black hover:bg-slate-200 font-bold transition-all px-6 py-5 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-            Sign In <ChevronRight className="w-4 h-4 ml-2" />
-          </Button>
-        </SignInButton>
       </nav>
-      <HeroSection />
+
+      <LandingHero />
+      <Features />
+      <HowItWorks />
+      <LandingFooter />
     </div>
   );
 }
