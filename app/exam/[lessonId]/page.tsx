@@ -11,6 +11,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, CheckCircle2, ChevronRight, GraduationCap, ShieldAlert, Timer, BookOpen, Sparkles, Loader2, Play, ArrowLeft, History } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
+import { useLessonContext } from "@/components/ai/LessonContext";
 
 export default function LessonPage() {
   const params = useParams();
@@ -20,6 +21,7 @@ export default function LessonPage() {
   
   const lesson = useQuery(api.exam.getExamLesson, { lessonId });
   const generateContent = useAction(api.courses.generateLessonContentAction);
+  const { setLessonContext } = useLessonContext();
   
   // Exam Mutations
   const logViolation = useMutation(api.exam.logViolation);
@@ -44,6 +46,9 @@ export default function LessonPage() {
   useEffect(() => {
     if (lesson) {
         setViewMode("content");
+        // Push content to AI Tutor
+        setLessonContext(lesson.content);
+        
         // Auto-generate if content is missing/placeholder
         if (needsGeneration && !isGenerating) {
             handleGenerateContent();
