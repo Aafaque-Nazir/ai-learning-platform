@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
+import { LessonContextProvider } from "@/components/ai/LessonContext";
+import { AITutor } from "@/components/ai/AITutor";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +42,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased mesh-gradient min-h-screen`}
       >
-        <ConvexClientProvider>{children}</ConvexClientProvider>
+        <ConvexClientProvider>
+          <LessonContextProvider>
+            {children}
+            <AITutor />
+          </LessonContextProvider>
+        </ConvexClientProvider>
       </body>
     </html>
   );
