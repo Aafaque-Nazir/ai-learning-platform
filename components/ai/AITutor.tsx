@@ -76,17 +76,17 @@ export function AITutor() {
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="mb-4 w-[350px] md:w-[450px] h-[600px] bg-slate-900/95 backdrop-blur-xl border border-indigo-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="mb-4 w-[350px] md:w-[450px] h-[600px] bg-slate-950/95 backdrop-blur-xl border border-blue-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="p-4 border-b border-indigo-500/20 bg-indigo-500/10 flex justify-between items-center">
+            <div className="p-4 border-b border-blue-500/20 bg-blue-500/10 flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-indigo-500 rounded-lg">
+                <div className="p-2 bg-blue-600 rounded-lg">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h3 className="text-white font-bold text-sm">AI Mentor</h3>
-                  <p className="text-indigo-300 text-xs">
+                  <p className="text-blue-300 text-xs">
                     {lessonContext ? "Viewing Lesson Context" : "General Guidance"}
                   </p>
                 </div>
@@ -111,15 +111,15 @@ export function AITutor() {
                   >
                     <div className={cn(
                       "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                      m.role === "user" ? "bg-purple-600" : "bg-indigo-600"
+                      m.role === "user" ? "bg-sky-600" : "bg-blue-600"
                     )}>
                       {m.role === "user" ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
                     </div>
                     <div className={cn(
                       "p-3 rounded-2xl max-w-[80%] text-sm leading-relaxed",
                       m.role === "user" 
-                        ? "bg-purple-600/20 text-purple-100 border border-purple-500/30 rounded-tr-sm" 
-                        : "bg-slate-800 text-slate-200 border border-indigo-500/30 rounded-tl-sm"
+                        ? "bg-sky-500/20 text-sky-100 border border-sky-500/30 rounded-tr-sm" 
+                        : "bg-slate-800 text-slate-200 border border-blue-500/30 rounded-tl-sm"
                     )}>
                       <div className="prose prose-invert prose-sm max-w-none">
                         <ReactMarkdown>
@@ -131,11 +131,11 @@ export function AITutor() {
                 ))}
                 {isLoading && (
                   <div className="flex gap-3">
-                     <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
+                     <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
                         <Bot className="w-4 h-4 text-white" />
                      </div>
-                     <div className="bg-slate-800 p-3 rounded-2xl rounded-tl-sm border border-indigo-500/30 flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+                     <div className="bg-slate-800 p-3 rounded-2xl rounded-tl-sm border border-blue-500/30 flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
                         <span className="text-slate-400 text-xs">Thinking...</span>
                      </div>
                   </div>
@@ -154,9 +154,9 @@ export function AITutor() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask a question..."
-                  className="bg-slate-800 border-white/10 text-white focus-visible:ring-indigo-500"
+                  className="bg-slate-800 border-white/10 text-white focus-visible:ring-blue-500"
                 />
-                <Button type="submit" size="icon" className="bg-indigo-600 hover:bg-indigo-500" disabled={isLoading}>
+                <Button type="submit" size="icon" className="bg-blue-600 hover:bg-blue-500" disabled={isLoading}>
                   <Send className="w-4 h-4" />
                 </Button>
               </form>
@@ -172,9 +172,9 @@ export function AITutor() {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsOpen(!isOpen)}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-full shadow-lg shadow-indigo-500/40 text-white border border-white/20 hover:shadow-indigo-500/60 transition-all group"
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 p-4 rounded-full shadow-lg shadow-blue-500/40 text-white border border-white/20 hover:shadow-blue-500/60 transition-all group"
         >
-            {isOpen ? <X className="w-6 h-6" /> : <Sparkles className="w-6 h-6 animate-pulse" />}
+            {isOpen ? <X className="w-6 h-6" /> : <Bot className="w-6 h-6 animate-pulse" />}
             <span className="sr-only">Toggle AI Tutor</span>
             
             {!isOpen && (

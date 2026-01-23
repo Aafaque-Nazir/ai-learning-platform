@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { SignInButton } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { Sparkles, ChevronRight, Github, Twitter, Linkedin } from "lucide-react";
@@ -34,8 +35,8 @@ export function LandingFooter() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 pt-12 border-t border-slate-800">
           <div className="col-span-1 lg:col-span-1">
             <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <Sparkles className="text-white w-4 h-4" />
+                <div className="relative w-8 h-8">
+                     <Image src="/brand-logo.png" alt="AdaptiveAI" fill className="object-contain" />
                 </div>
                 <span className="text-xl font-bold text-white">AdaptiveAI</span>
             </div>

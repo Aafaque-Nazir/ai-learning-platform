@@ -45,10 +45,10 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  /* Professional Accents */
-  --color-premium-indigo: #4338ca;
-  --color-premium-blue: #2563eb;
-  --color-premium-cyan: #06b6d4;
+  /* Professional Accents - Blue Contrast Theme */
+  --color-premium-indigo: #1e3a8a; /* Deep Blue */
+  --color-premium-blue: #3b82f6;   /* Bright Blue */
+  --color-premium-cyan: #0ea5e9;   /* Sky Blue */
 }
 
 :root {
@@ -61,11 +61,11 @@
   --popover-foreground: #020617;
   --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
+  --secondary: #f0f9ff; /* Light Sky */
+  --secondary-foreground: #0c4a6e;
+  --muted: #f0f9ff;
   --muted-foreground: #64748b;
-  --accent: #f1f5f9;
+  --accent: #f0f9ff;
   --accent-foreground: #0f172a;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
@@ -86,7 +86,7 @@
   --primary-foreground: #ffffff;
   --secondary: #1e293b;
   --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
+  --muted: #0f172a;
   --muted-foreground: #94a3b8;
   --accent: #1e293b;
   --accent-foreground: #f8fafc;
@@ -102,7 +102,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/20;
+    @apply bg-background text-foreground selection:bg-blue-500/30;
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
@@ -119,24 +119,24 @@
   }
 
   .sidebar-glass {
-    @apply bg-[#050a1f]/80 backdrop-blur-3xl border-r border-white/10 shadow-[20px_0_50px_rgba(0,0,0,0.3)];
+    @apply bg-[#020617]/90 backdrop-blur-3xl border-r border-white/5 shadow-[20px_0_50px_rgba(0,0,0,0.5)];
   }
 
   .mesh-gradient {
     background-color: #020617;
     background-image:
-      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.15) 0px, transparent 50%),
+      radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.15) 0px, transparent 50%),
       radial-gradient(
         at 100% 100%,
-        rgba(37, 99, 235, 0.1) 0px,
+        rgba(59, 130, 246, 0.1) 0px,
         transparent 50%
       ),
-      radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 50%);
+      radial-gradient(at 0% 100%, rgba(14, 165, 233, 0.1) 0px, transparent 50%);
   }
 
   .premium-border {
-    @apply border border-transparent bg-origin-border [background-clip:padding-box,border-box] [background-image:linear-gradient(to_right,var(--card),var(--card)),linear-gradient(to_bottom_right,var(--color-premium-indigo),var(--color-premium-cyan))];
+    @apply border border-transparent bg-origin-border [background-clip:padding-box,border-box] [background-image:linear-gradient(to_right,var(--card),var(--card)),linear-gradient(to_bottom_right,var(--color-premium-blue),var(--color-premium-cyan))];
   }
 
   /* Custom Scrollbar */

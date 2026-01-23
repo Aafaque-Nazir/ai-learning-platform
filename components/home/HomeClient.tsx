@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   useUser,
   UserButton,
@@ -91,8 +92,8 @@ function Sidebar({
       {/* Header with Logo and Logout */}
       <div className="flex items-center justify-between px-6 py-6 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-inner">
-            <Sparkles className="text-white w-4 h-4" />
+          <div className="relative w-8 h-8">
+            <Image src="/brand-logo.png" alt="AdaptiveAI" fill className="object-contain" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">
             AdaptiveAI
@@ -179,8 +180,8 @@ function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-[100] max-w-7xl mx-auto px-6 py-6 mt-4">
         <div className="flex justify-between items-center px-8 py-4 bg-black/40 border border-white/10 rounded-full backdrop-blur-2xl shadow-2xl">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <Sparkles className="text-white w-5 h-5" />
+            <div className="relative w-14 h-14">
+               <Image src="/brand-logo.png" alt="AdaptiveAI" fill className="object-contain" />
             </div>
             <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
               AdaptiveAI

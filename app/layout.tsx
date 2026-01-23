@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
   description: "The world's most advanced AI-powered learning platform. Generate courses, take adaptive exams, and master any subject.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/brand-logo.png",
   },
   openGraph: {
     type: "website",

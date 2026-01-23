@@ -2,7 +2,7 @@
 
 import { ClerkProvider, useAuth, useUser } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
-import { ConvexReactClient, useMutation } from "convex/react";
+import { ConvexReactClient, useMutation, useQuery, useConvexAuth } from "convex/react";
 import { ReactNode, useEffect } from "react";
 import { api } from "@/convex/_generated/api";
 
@@ -14,21 +14,22 @@ const convex = convexUrl
 
 // Auto-create user on first load
 function AutoUserCreation() {
-  const { user, isLoaded } = useUser();
-  const createUser = useMutation(api.userFix.createUserManually);
+  const { isAuthenticated } = useConvexAuth();
+  const { user } = useUser();
+  const convexUser = useQuery(api.users.current);
+  const storeUser = useMutation(api.users.store);
   
   useEffect(() => {
-    if (isLoaded && user?.id) {
-      createUser({
-        clerkId: user.id,
-        name: user.fullName || user.firstName || "Student",
-        email: user.primaryEmailAddress?.emailAddress || "",
-      }).catch((err) => {
-        // Silently fail if user already exists
-        console.log("User creation:", err.message);
+    // Only attempt to store if:
+    // 1. Convex is fully authenticated (token exchanged)
+    // 2. We have the Clerk user object (for name/email)
+    // 3. Convex user is missing (convexUser === null) - meaning we need to create them
+    if (isAuthenticated && convexUser === null && user) {
+      storeUser().catch((err) => {
+        console.error("User sync failed:", err);
       });
     }
-  }, [isLoaded, user?.id, createUser]);
+  }, [isAuthenticated, convexUser, storeUser, user]);
 
   return null;
 }
