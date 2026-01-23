@@ -79,6 +79,14 @@ export const generateCourseAction = action({
       console.log("OpenAI Success. Content Length:", content.length);
       const cleanContent = content.replace(/```json/g, "").replace(/```/g, "").trim();
       const parsed = JSON.parse(cleanContent);
+      
+      // VALIDATION: Ensure AI didn't return a lazy 1-module course
+      if (!parsed.modules || parsed.modules.length < 4) {
+        console.error(`AI returned only ${parsed.modules?.length || 0} modules. REJECTING and using fallback.`);
+        throw new Error("AI returned insufficient modules (Lazy generation)");
+      }
+
+      console.log(`Successfully generated ${parsed.modules.length} modules.`);
       return parsed.modules;
 
     } catch (e) {
