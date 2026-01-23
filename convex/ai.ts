@@ -38,30 +38,37 @@ export const chat = action({
     };
 
     // 2. Call OpenAI
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini", // Faster and more reliable for all keys
-        messages: [
-            systemMessage,
-            ...messages
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
-    });
+    // 2. Call OpenAI
+    try {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+              systemMessage,
+              ...messages
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
 
-    const json = await response.json();
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("OpenAI API Error:", errorText);
+        throw new Error(`OpenAI Error (${response.status}): ${errorText}`);
+      }
 
-    if (json.error) {
-        console.error("OpenAI Error:", json.error);
-        throw new Error(json.error.message || "AI Error");
+      const json = await response.json();
+      return json.choices[0].message.content;
+
+    } catch (err: any) {
+      console.error("Action Error:", err);
+      throw new Error(err.message || "Failed to communicate with AI");
     }
-
-    return json.choices[0].message.content;
   },
 });
