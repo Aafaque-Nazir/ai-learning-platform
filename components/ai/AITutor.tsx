@@ -59,16 +59,20 @@ export function AITutor() {
       });
 
       setMessages(prev => [...prev, { role: "assistant", content: response }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Chat Error:", error);
-      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error connecting to the AI brain. Please try again." }]);
+      const errorMessage = error.message?.includes("OPENAI_API_KEY") 
+        ? "Setup Required: Please add OPENAI_API_KEY to your Convex Dashboard environment variables."
+        : `Error: ${error.message || "Failed to connect to AI."}`;
+      
+      setMessages(prev => [...prev, { role: "assistant", content: errorMessage }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end pointer-events-none sm:bottom-6 sm:right-6">
       <div className="pointer-events-auto"> 
       <AnimatePresence>
         {isOpen && (
@@ -76,7 +80,7 @@ export function AITutor() {
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="mb-4 w-[350px] md:w-[450px] h-[600px] bg-slate-950/95 backdrop-blur-xl border border-blue-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="mb-4 w-[90vw] sm:w-[380px] md:w-[450px] h-[70vh] max-h-[600px] bg-slate-950/95 backdrop-blur-xl border border-blue-500/30 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="p-4 border-b border-blue-500/20 bg-blue-500/10 flex justify-between items-center">
