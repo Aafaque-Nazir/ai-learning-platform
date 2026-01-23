@@ -45,7 +45,7 @@ export const chat = action({
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o", // Or gpt-3.5-turbo if cost is a concern
+        model: "gpt-4o-mini", // Faster and more reliable for all keys
         messages: [
             systemMessage,
             ...messages
